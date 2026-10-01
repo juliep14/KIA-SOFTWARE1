@@ -1,0 +1,74 @@
+.root {
+    -fx-font-family: "Segoe UI", "System UI", sans-serif;
+    -fx-font-size: 13px;
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: #12121a;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #1a1a26;
+    -fx-background-radius: 6 6 0 0;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #7c3aed;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #f3f4f6;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.table-view .column-header {
+    -fx-background-color: #2d2d3d;
+    -fx-text-fill: #f3f4f6;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: #1a1a26;
+    -fx-text-fill: #f3f4f6;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #12121a;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #7c3aed;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.titled-pane > .title {
+    -fx-background-color: #2d2d3d;
+    -fx-text-fill: #a78bfa;
+}
+
+.titled-pane > .content {
+    -fx-background-color: #12121a;
+}
+
+
+
+.combo-box {
+    -fx-background-color: #1a1a26;
+    -fx-border-color: #2d2d3d;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: #1a1a26;
+    -fx-text-fill: #f3f4f6;
+}
+
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: #7c3aed;
+    -fx-text-fill: white;
+}
