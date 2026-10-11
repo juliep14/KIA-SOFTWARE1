@@ -76,7 +76,7 @@ public class EmployeeService {
         opRefreshCache(prmId);
     }
 
-    public void opUpdateEmployee(int prmId, String prmName, String prmPhone, Double prmSalary) {
+    public void opUpdateEmployee(int prmId, String prmName, String prmPhone, Double prmSalary, String prmState) {
         clsValidations.opValidateId(prmId);
 
         if (!attEmployeeRepository.opEmployeeExist(prmId))
@@ -88,6 +88,8 @@ public class EmployeeService {
             clsValidations.opValidatePhone(prmPhone);
         if (prmSalary != null)
             clsValidations.opValidateSalary(prmSalary);
+        if (prmState != null)
+            clsValidations.opValidateState(prmState);
 
         clsEmployee varEmployee = opFetchFromDB(prmId);
 
@@ -97,6 +99,8 @@ public class EmployeeService {
             varEmployee.setAttPhone(prmPhone);
         if (prmSalary != null)
             varEmployee.setAttSalary(prmSalary);
+        if (prmState != null)
+            varEmployee.setAttState(prmState);
 
         try {
             attEmployeeRepository.opUpdateEmployee(varEmployee);
@@ -107,24 +111,16 @@ public class EmployeeService {
         opRefreshCache(prmId);
     }
 
-    public void opDisableEmployee(int prmId) {
-        clsValidations.opValidateId(prmId);
-
-        if (!attEmployeeRepository.opEmployeeExist(prmId))
-            throw new excNotFoundException("Empleado no encontrado");
-
+    public List<clsEmployee> opGetAllEmployees() {
         try {
-            attEmployeeRepository.opDisableEmployee(prmId);
+            return attEmployeeRepository.opGetAllEmployees();
         } catch (excDatabaseException e) {
-            throw new excDatabaseException("Error al inactivar al empleado: ", e);
+            throw new excDatabaseException("Error al obtener empleados: ", e);
         }
-
-        opRefreshCache(prmId);
     }
 
     public clsEmployee opGetEmployeeById(int prmId) {
-        if (!attEmployeeRepository.opEmployeeExist(prmId))
-            throw new excNotFoundException("Empleado no encontrado");
+        clsValidations.opValidateId(prmId);
 
         clsEmployee varEmployee = attEmployees.get(prmId);
         if (varEmployee != null)
@@ -135,11 +131,8 @@ public class EmployeeService {
         return varEmployee;
     }
 
-    public List<clsEmployee> opGetAllEmployees() {
-        try {
-            return attEmployeeRepository.opGetAllEmployees();
-        } catch (excDatabaseException e) {
-            throw new excDatabaseException("Error al obtener empleados: ", e);
-        }
+    public boolean opEmployeeExist(int prmId) {
+        clsValidations.opValidateId(prmId);
+        return attEmployeeRepository.opEmployeeExist(prmId);
     }
 }

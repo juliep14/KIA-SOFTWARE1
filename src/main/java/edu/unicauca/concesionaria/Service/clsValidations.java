@@ -67,4 +67,58 @@ public class clsValidations {
         if (prmId <= 0)
             throw new excValidationException("Error: Id debe ser mayor a cero");
     }
+
+    public static void opValidateId(Integer prmId) throws excValidationException {
+        if (prmId != null && prmId <= 0)
+            throw new excValidationException("Error: Id debe ser mayor a cero");
+    }
+
+    public static void opValidateGoalType(String prmGoalType) throws excValidationException {
+        if (prmGoalType == null || prmGoalType.isBlank())
+            throw new excValidationException("Error: Tipo de meta vacío o nulo");
+        String varType = prmGoalType.toLowerCase().trim();
+        if (!varType.equals("monthly") && !varType.equals("quarterly") && !varType.equals("yearly"))
+            throw new excValidationException("Error: Tipo de meta inválido");
+    }
+
+    public static void opValidateSalesGoalState(String prmState) throws excValidationException {
+        if (prmState == null || prmState.isBlank())
+            throw new excValidationException("Error: Estado de meta vacío o nulo");
+        String varState = prmState.toLowerCase().trim();
+        if (!varState.equals("inactive") && !varState.equals("active") && !varState.equals("complete"))
+            throw new excValidationException("Error: Estado de meta inválido");
+    }
+
+    public static void opValidateTargetValue(double prmValue) throws excValidationException {
+        opValidatePositiveNumber(prmValue, "El valor de la meta");
+        if (prmValue <= 0)
+            throw new excValidationException("Error: El valor de la meta debe ser mayor a cero");
+        if (prmValue > 999_999_999_999.999)
+            throw new excValidationException("Error: El valor de la meta excede el límite permitido");
+    }
+
+    public static void opValidateDateRange(Date prmStartDate, Date prmEndDate) throws excValidationException {
+        if (prmEndDate != null && prmStartDate != null && prmEndDate.before(prmStartDate))
+            throw new excValidationException("Error: La fecha final no puede ser menor a la inicial");
+    }
+
+    public static void opValidateMandatoryCustomerFields(Integer prmDoc, String prmName, String prmPhone) throws excValidationException {
+        java.util.List<String> varFaltantes = new java.util.ArrayList<>();
+        if (prmDoc == null || prmDoc <= 0) {
+            varFaltantes.add("Documento");
+        }
+        if (prmName == null || prmName.trim().isEmpty()) {
+            varFaltantes.add("Nombre");
+        }
+        if (prmPhone == null || prmPhone.trim().isEmpty()) {
+            varFaltantes.add("Teléfono (contacto)");
+        }
+        if (!varFaltantes.isEmpty()) {
+            if (varFaltantes.size() == 1) {
+                throw new excValidationException("Falta el siguiente campo obligatorio del cliente: " + varFaltantes.get(0));
+            } else {
+                throw new excValidationException("Faltan los siguientes campos obligatorios del cliente: " + String.join(", ", varFaltantes));
+            }
+        }
+    }
 }

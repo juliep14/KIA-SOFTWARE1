@@ -23,6 +23,12 @@ public class CustomerRepository extends BaseRepository {
              WHERE CUS_ID = ?
             """;
 
+    private static final String SQL_UPDATE_WITH_ID = """
+            UPDATE TBL_CUSTOMER
+               SET CUS_ID = ?, CUS_NAME = ?, CUS_PHONE = ?, CUS_EMAIL = ?
+             WHERE CUS_ID = ?
+            """;
+
     private static final String SQL_DISABLE = """
             UPDATE TBL_CUSTOMER
                SET CUS_STATE = 'inactive'
@@ -76,16 +82,34 @@ public class CustomerRepository extends BaseRepository {
         }
     }
 
-    public void opUpdateCustomer(clsCustomer prmCustomer) {
+    public void opUpdateCustomer(int prmOldId, clsCustomer prmCustomer) {
         try {
-            attJdbcTemplate.update(SQL_UPDATE,
-                    prmCustomer.getAttName(),
-                    prmCustomer.getAttPhone(),
-                    prmCustomer.getAttEmail(),
-                    prmCustomer.getAttCustomerId());
+            if (prmOldId != prmCustomer.getAttCustomerId()) {
+                try {
+                    attJdbcTemplate.update("UPDATE TBL_SALE SET CUS_ID = ? WHERE CUS_ID = ?",
+                            prmCustomer.getAttCustomerId(), prmOldId);
+                } catch (Exception ignored) {
+                }
+                attJdbcTemplate.update(SQL_UPDATE_WITH_ID,
+                        prmCustomer.getAttCustomerId(),
+                        prmCustomer.getAttName(),
+                        prmCustomer.getAttPhone(),
+                        prmCustomer.getAttEmail(),
+                        prmOldId);
+            } else {
+                attJdbcTemplate.update(SQL_UPDATE,
+                        prmCustomer.getAttName(),
+                        prmCustomer.getAttPhone(),
+                        prmCustomer.getAttEmail(),
+                        prmOldId);
+            }
         } catch (Exception e) {
             throw opWrap(e);
         }
+    }
+
+    public void opUpdateCustomer(clsCustomer prmCustomer) {
+        opUpdateCustomer(prmCustomer.getAttCustomerId(), prmCustomer);
     }
 
     public void opDisableCustomer(int prmId) {

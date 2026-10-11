@@ -20,7 +20,7 @@ public class EmployeeRepository extends BaseRepository {
 
     private static final String SQL_UPDATE = """
             UPDATE TBL_EMPLOYEE
-               SET EMP_NAME = ?, EMP_PHONE = ?, EMP_SALARY = ?
+               SET EMP_NAME = ?, EMP_PHONE = ?, EMP_SALARY = ?, EMP_STATE = ?
              WHERE EMP_ID = ?
             """;
 
@@ -93,15 +93,8 @@ public class EmployeeRepository extends BaseRepository {
                     prmEmployee.getAttName(),
                     prmEmployee.getAttPhone(),
                     prmEmployee.getAttSalary(),
+                    prmEmployee.getAttState(),
                     prmEmployee.getAttEmployeeId());
-        } catch (Exception e) {
-            throw opWrap(e);
-        }
-    }
-
-    public void opDisableEmployee(int prmId) {
-        try {
-            attJdbcTemplate.update(SQL_DISABLE, prmId);
         } catch (Exception e) {
             throw opWrap(e);
         }

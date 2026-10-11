@@ -38,23 +38,31 @@ public class CustomerService {
         attCustomers.put(prmId, varFresh);
     }
 
-    public void opRegisterCustomer(int prmId, String prmName, String prmEmail, String prmPhone, String prmState) {
+    public void opRegisterCustomer(Integer prmId, String prmName, String prmEmail, String prmPhone, String prmState) {
+        // Criterio 3 (KIA-HU-08): Datos obligatorios incompletos
+        clsValidations.opValidateMandatoryCustomerFields(prmId, prmName, prmPhone);
         clsValidations.opValidateId(prmId);
 
-        if (attCustomerRepository.opCustomerExist(prmId))
-            throw new excDuplicateDataException("Cliente ya registrado");
+        // Criterio 2 (KIA-HU-08): Documento duplicado
+        if (attCustomerRepository.opCustomerExist(prmId)) {
+            throw new excDuplicateDataException("El cliente con el documento " + prmId + " ya se encuentra registrado en el sistema.");
+        }
 
         clsValidations.opValidateName(prmName, 3, 50);
-        clsValidations.opValidateEmail(prmEmail);
         clsValidations.opValidatePhone(prmPhone);
-        clsValidations.opValidateState(prmState);
+        if (prmEmail != null && !prmEmail.isBlank()) {
+            clsValidations.opValidateEmail(prmEmail);
+        }
+
+        String varState = (prmState != null && !prmState.isBlank()) ? prmState.toLowerCase().trim() : "active";
+        clsValidations.opValidateState(varState);
 
         clsCustomer varTemp = new clsCustomer();
         varTemp.setAttCustomerId(prmId);
         varTemp.setAttName(prmName.trim());
-        varTemp.setAttEmail(prmEmail == null ? null : prmEmail.toLowerCase().trim());
-        varTemp.setAttPhone(prmPhone);
-        varTemp.setAttState(prmState.toLowerCase().trim());
+        varTemp.setAttEmail(prmEmail == null || prmEmail.isBlank() ? null : prmEmail.toLowerCase().trim());
+        varTemp.setAttPhone(prmPhone.trim());
+        varTemp.setAttState(varState);
 
         try {
             attCustomerRepository.opRegisterCustomer(varTemp);
@@ -65,35 +73,65 @@ public class CustomerService {
         opRefreshCache(prmId);
     }
 
-    public void opUpdateCustomer(int prmId, String prmName, String prmPhone, String prmEmail) {
-        clsValidations.opValidateId(prmId);
+    public void opUpdateCustomer(int prmCurrentId, int prmNewId, String prmName, String prmPhone, String prmEmail) {
+        clsValidations.opValidateId(prmCurrentId);
 
-        if (!attCustomerRepository.opCustomerExist(prmId))
-            throw new excNotFoundException("Cliente no encontrado");
+        // Criterio 2 (KIA-HU-09): Cliente no encontrado
+        if (!attCustomerRepository.opCustomerExist(prmCurrentId)) {
+            throw new excNotFoundException("El cliente con documento " + prmCurrentId + " no fue encontrado en el sistema.");
+        }
 
-        if (prmName != null)
+        // Criterio 3 (KIA-HU-09): Documento duplicado al actualizar
+        if (prmNewId != prmCurrentId) {
+            clsValidations.opValidateId(prmNewId);
+            if (attCustomerRepository.opCustomerExist(prmNewId)) {
+                throw new excDuplicateDataException("El número de documento " + prmNewId + " ya está en uso por otro cliente registrado.");
+            }
+        }
+
+        if (prmName != null && !prmName.isBlank()) {
             clsValidations.opValidateName(prmName, 3, 50);
-        if (prmEmail != null)
-            clsValidations.opValidateEmail(prmEmail);
-        if (prmPhone != null)
+        }
+        if (prmPhone != null && !prmPhone.isBlank()) {
             clsValidations.opValidatePhone(prmPhone);
+        }
+        if (prmEmail != null && !prmEmail.isBlank()) {
+            clsValidations.opValidateEmail(prmEmail);
+        }
 
-        clsCustomer varCustomer = opFetchFromDB(prmId);
+        clsCustomer varCustomer = opFetchFromDB(prmCurrentId);
+        varCustomer.setAttCustomerId(prmNewId);
 
-        if (prmName != null)
+        if (prmName != null && !prmName.isBlank()) {
             varCustomer.setAttName(prmName.trim());
-        if (prmEmail != null)
-            varCustomer.setAttEmail(prmEmail.toLowerCase().trim());
-        if (prmPhone != null)
-            varCustomer.setAttPhone(prmPhone);
+        }
+        if (prmPhone != null && !prmPhone.isBlank()) {
+            varCustomer.setAttPhone(prmPhone.trim());
+        }
+        if (prmEmail != null) {
+            varCustomer.setAttEmail(prmEmail.isBlank() ? null : prmEmail.toLowerCase().trim());
+        }
 
         try {
-            attCustomerRepository.opUpdateCustomer(varCustomer);
+            attCustomerRepository.opUpdateCustomer(prmCurrentId, varCustomer);
         } catch (excDatabaseException e) {
             throw new excDatabaseException("Error al actualizar cliente: ", e);
         }
 
-        opRefreshCache(prmId);
+        attCustomers.remove(prmCurrentId);
+        attCustomers.put(prmNewId, varCustomer);
+    }
+
+    public void opUpdateCustomer(int prmId, String prmName, String prmPhone, String prmEmail) {
+        opUpdateCustomer(prmId, prmId, prmName, prmPhone, prmEmail);
+    }
+
+    public clsCustomer opGetCustomerForEdit(int prmId) {
+        clsValidations.opValidateId(prmId);
+        if (!attCustomerRepository.opCustomerExist(prmId)) {
+            throw new excNotFoundException("El cliente con documento " + prmId + " no fue encontrado en el sistema.");
+        }
+        return opGetCustomerById(prmId);
     }
 
     public void opDisableCustomer(int prmId) {
