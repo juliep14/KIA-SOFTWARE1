@@ -1,6 +1,7 @@
 package edu.unicauca.concesionaria.ui.util;
 
 import edu.unicauca.concesionaria.ui.Theme;
+import java.util.Collections;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

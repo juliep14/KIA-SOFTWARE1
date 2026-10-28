@@ -30,6 +30,9 @@ ProyectoBase/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+nb-configuration.xml
+nbactions.xml
+nbactions.xsd
 
 ### VS Code ###
 .vscode/

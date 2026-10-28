@@ -119,6 +119,31 @@ public class EmployeePanel {
             clearForm.run();
             refreshTable();
         }));
+
+        // Botón: Buscar Empleado
+        var searchBtn = UiKit.primaryButton("Buscar Empleado");
+        searchBtn.setOnAction(e -> UiKit.run(() -> {
+            int idVal = UiKit.parseInt(id.getText(), "ID");
+            clsEmployee varEmployee = controller.opGetEmployeeById(idVal);
+            if (varEmployee != null) {
+                UiKit.showInfo("Información del Empleado", String.format(
+                        "ID del vendedor: %d\n"
+                        + "Nombre: %s\n"
+                        + "Teléfono: %s\n"
+                        + "Salario: $%,.2f\n"
+                        + "Rol: %s\n"
+                        + "Fecha de contratación: %s\n",
+                        idVal,
+                        varEmployee.getAttName(),
+                        varEmployee.getAttPhone(),
+                        varEmployee.getAttSalary(),
+                        varEmployee.getAttRole(),
+                        (varEmployee.getAttHireDate() != null)
+                        ? varEmployee.getAttHireDate().toString()
+                        : "Error al obtener fecha"));
+            }
+            clearForm.run();
+        }));
         // endregion
 
         // region FORMULARIO META DE VENTAS
@@ -167,14 +192,14 @@ public class EmployeePanel {
                     goalType.getValue(),
                     UiKit.parseDouble(goalTarget.getText(), "Valor objetivo"),
                     UiKit.toSqlDate(goalStartDate),
-                    "active"); 
+                    "active");
             refreshGoalTable();
             clearGoalForm.run();
         }));
 
         // Botón: Actualizar Meta
         var updateGoalBtn = UiKit.primaryButton("Actualizar Meta");
-        updateGoalBtn.setOnAction(e -> UiKit.run(() -> {              
+        updateGoalBtn.setOnAction(e -> UiKit.run(() -> {
             controller.opUpdateSalesGoal(
                     UiKit.parseInt(goalId.getText(), "ID meta"),
                     UiKit.parseDouble(goalTarget.getText(), "Valor objetivo"),
@@ -269,7 +294,7 @@ public class EmployeePanel {
                 UiKit.title("Gestión de Empleados"),
                 UiKit.muted("Rol manager/seller (un solo manager). Teléfono único."),
                 empFormSection,
-                UiKit.buttonRow(registerBtn, updateBtn),
+                UiKit.buttonRow(registerBtn, updateBtn, searchBtn),
                 table,
                 new Separator(),
                 UiKit.title("Metas Comerciales y Cumplimiento"),
