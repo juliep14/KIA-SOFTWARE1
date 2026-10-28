@@ -50,29 +50,13 @@ public class clsController {
 
     // region CUSTOMER
 
-    public void opRegisterCustomer(Integer prmId, String prmName, String prmPhone,
+    public void opRegisterCustomer(int prmId, String prmName, String prmPhone,
             String prmEmail, String prmState) {
         attCustomerService.opRegisterCustomer(prmId, prmName, prmEmail, prmPhone, prmState);
     }
 
-    public void opUpdateCustomer(int prmCurrentId, int prmNewId, String prmName, String prmPhone, String prmEmail) {
-        attCustomerService.opUpdateCustomer(prmCurrentId, prmNewId, prmName, prmPhone, prmEmail);
-    }
-
-    public void opUpdateCustomer(int prmId, String prmName, String prmPhone, String prmEmail) {
-        attCustomerService.opUpdateCustomer(prmId, prmId, prmName, prmPhone, prmEmail);
-    }
-
-    public clsCustomer opGetCustomerForEdit(int prmId) {
-        return attCustomerService.opGetCustomerForEdit(prmId);
-    }
-
-    public void opDisableCustomer(int prmId) {
-        attCustomerService.opDisableCustomer(prmId);
-    }
-
-    public clsCustomer opGetCustomerById(int prmId) {
-        return attCustomerService.opGetCustomerById(prmId);
+    public void opUpdateCustomer(int prmId, String prmName, String prmPhone, String prmEmail, String prmState) {
+        attCustomerService.opUpdateCustomer(prmId, prmName, prmPhone, prmEmail, prmState);
     }
 
     public List<clsCustomer> opGetAllCustomers() {
@@ -83,42 +67,18 @@ public class clsController {
 
     // region SALESGOAL
 
-    public int opRegisterSalesGoal(Integer prmSalesGoalId, int prmIdEmployee,
+    public void opRegisterSalesGoal(int prmSalesGoalId, int prmIdEmployee,
                                    String prmGoalType, double prmTargetValue, Date prmStartDate, String prmGoalState) {
-        return attSalesGoalService.opRegisterSalesGoal(
+        attSalesGoalService.opRegisterSalesGoal(
                 prmSalesGoalId, prmIdEmployee, prmGoalType, prmTargetValue, prmStartDate, prmGoalState);
     }
 
-    public void opUpdateSalesGoal(int prmId, Double prmTargetValue, String prmGoalType) {
-        attSalesGoalService.opUpdateSalesGoal(prmId, prmTargetValue, prmGoalType);
-    }
-
-    public void opDisableSalesGoal(int prmId) {
-        attSalesGoalService.opDisableSalesGoal(prmId);
-    }
-
-    public void opCompleteSalesGoal(int prmId) {
-        attSalesGoalService.opCompleteSalesGoal(prmId);
-    }
-
-    public clsSalesGoal opGetSalesGoalById(int prmId) {
-        return attSalesGoalService.opGetSalesGoalById(prmId);
+    public void opUpdateSalesGoal(int prmId, Double prmTargetValue, String prmGoalType,  Date prmStartDate, String prmGoalState) {
+        attSalesGoalService.opUpdateSalesGoal(prmId, prmTargetValue, prmGoalType, prmStartDate, prmGoalState);
     }
 
     public List<clsSalesGoal> opGetAllSalesGoals() {
         return attSalesGoalService.opGetAllSalesGoals();
-    }
-
-    public List<clsSalesGoal> opGetSalesGoalsByState(String prmState) {
-        return attSalesGoalService.opGetSalesGoalsByState(prmState);
-    }
-
-    public List<clsSalesGoal> opGetSalesGoalsByEmployeeId(int prmEmployeeId) {
-        return attSalesGoalService.opGetSalesGoalsByEmployeeId(prmEmployeeId);
-    }
-
-    public clsSalesGoal opGetActiveGoalByEmployeeId(int prmEmployeeId) {
-        return attSalesGoalService.opGetActiveGoalByEmployeeId(prmEmployeeId);
     }
 
     public double opGetEmployeeTotalSales(int prmEmployeeId) {

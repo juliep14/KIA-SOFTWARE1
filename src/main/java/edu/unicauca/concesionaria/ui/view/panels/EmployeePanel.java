@@ -26,7 +26,7 @@ public class EmployeePanel {
 
         // Columnas para tabla de empleados
         table.getColumns().addAll(
-                TableHelper.col("ID", e -> String.valueOf(e.getAttEmployeeId())),
+                TableHelper.col("ID Vendedor", e -> String.valueOf(e.getAttEmployeeId())),
                 TableHelper.col("Nombre", clsEmployee::getAttName),
                 TableHelper.col("Teléfono", clsEmployee::getAttPhone),
                 TableHelper.col("Salario", e -> String.valueOf(e.getAttSalary())),
@@ -76,6 +76,7 @@ public class EmployeePanel {
             hireDate.setValue(null);
         };
 
+        // Botón: Limpiar
         var clearBtn = UiKit.secondaryButton("Limpiar");
         clearBtn.setOnAction(e -> clearForm.run());
 
@@ -91,7 +92,8 @@ public class EmployeePanel {
         GridPane.setColumnSpan(clearBtn, 2);
         form.add(clearBtn, 0, 7);
 
-        var registerBtn = UiKit.primaryButton("Registrar");
+        // Botón: Registrar Empleado
+        var registerBtn = UiKit.primaryButton("Registrar Empleado");
         registerBtn.setOnAction(e -> UiKit.run(() -> {
             controller.opRegisterEmployee(
                     UiKit.parseInt(id.getText(), "ID"),
@@ -100,18 +102,19 @@ public class EmployeePanel {
                     UiKit.parseDouble(salary.getText(), "Salario"),
                     UiKit.toSqlDate(hireDate),
                     role.getValue(),
-                    state.getValue());
+                    "active");
             clearForm.run();
             refreshTable();
         }));
 
-        var updateBtn = UiKit.primaryButton("Actualizar");
+        // Botón: Actualizar Empleado 
+        var updateBtn = UiKit.primaryButton("Actualizar Empleado");
         updateBtn.setOnAction(e -> UiKit.run(() -> {
             controller.opUpdateEmployee(
                     UiKit.parseInt(id.getText(), "ID"),
                     UiKit.emptyToNull(name.getText()),
                     UiKit.emptyToNull(phone.getText()),
-                    UiKit.parseDoubleOrNull(salary.getText()),
+                    UiKit.parseDouble(salary.getText(), "Salario"),
                     state.getValue());
             clearForm.run();
             refreshTable();
@@ -119,7 +122,7 @@ public class EmployeePanel {
         // endregion
 
         // region FORMULARIO META DE VENTAS
-        var goalId = UiKit.field("ID meta (opcional / autogenerado)");
+        var goalId = UiKit.field("ID meta");
         var goalEmpId = UiKit.field("ID vendedor");
         ComboBox<String> goalType = new ComboBox<>();
         goalType.getItems().addAll("monthly", "quarterly", "yearly");
@@ -128,7 +131,7 @@ public class EmployeePanel {
         var goalStartDate = UiKit.datePicker("Fecha inicio");
         goalStartDate.setValue(LocalDate.now());
         ComboBox<String> goalState = new ComboBox<>();
-        goalState.getItems().addAll("active", "inactive");
+        goalState.getItems().addAll("active", "inactive", "complete");
         goalState.setValue("active");
 
         Runnable clearGoalForm = () -> {
@@ -140,6 +143,7 @@ public class EmployeePanel {
             goalState.setValue("active");
         };
 
+        // Botón: Limpiar
         var clearGoalBtn = UiKit.secondaryButton("Limpiar");
         clearGoalBtn.setOnAction(e -> clearGoalForm.run());
 
@@ -157,51 +161,28 @@ public class EmployeePanel {
         // Botón: Asignar Meta
         var registerGoalBtn = UiKit.primaryButton("Asignar Meta");
         registerGoalBtn.setOnAction(e -> UiKit.run(() -> {
-            int empIdVal = UiKit.parseInt(goalEmpId.getText(), "ID vendedor");
-            int newGoalId = controller.opRegisterSalesGoal(
-                    UiKit.parseIntOrNull(goalId.getText()),
-                    empIdVal,
+            controller.opRegisterSalesGoal(
+                    UiKit.parseInt(goalId.getText(), "ID meta"),
+                    UiKit.parseInt(goalEmpId.getText(), "ID vendedor"),
                     goalType.getValue(),
                     UiKit.parseDouble(goalTarget.getText(), "Valor objetivo"),
                     UiKit.toSqlDate(goalStartDate),
-                    goalState.getValue());
-
+                    "active"); 
             refreshGoalTable();
             clearGoalForm.run();
-
-            clsSalesGoal saved = controller.opGetSalesGoalById(newGoalId);
-            if (saved != null) {
-                UiKit.showInfo("Meta Asignada", String.format(
-                        "Meta establecida con éxito para el vendedor ID %d.\n"
-                                + "Objetivo: $%,.2f | Total vendido: $%,.2f\n"
-                                + "Porcentaje de cumplimiento: %.2f%%",
-                        empIdVal, saved.getAttTargetValue(), saved.getAttAchievedValue(), saved.getAttCompliancePercentage()));
-            }
         }));
 
         // Botón: Actualizar Meta
         var updateGoalBtn = UiKit.primaryButton("Actualizar Meta");
-        updateGoalBtn.setOnAction(e -> UiKit.run(() -> {
-            int targetGoalId = UiKit.parseInt(goalId.getText(), "ID meta");
-            int empIdVal = UiKit.parseInt(goalEmpId.getText(), "ID vendedor");
-
-
+        updateGoalBtn.setOnAction(e -> UiKit.run(() -> {              
             controller.opUpdateSalesGoal(
-                    targetGoalId,
-                    UiKit.parseDoubleOrNull(goalTarget.getText()),
-                    goalType.getValue());
-
+                    UiKit.parseInt(goalId.getText(), "ID meta"),
+                    UiKit.parseDouble(goalTarget.getText(), "Valor objetivo"),
+                    goalType.getValue(),
+                    UiKit.toSqlDate(goalStartDate),
+                    goalState.getValue());
             refreshGoalTable();
             clearGoalForm.run();
-
-            clsSalesGoal updated = controller.opGetSalesGoalById(targetGoalId);
-            if (updated != null) {
-                UiKit.showInfo("Meta Actualizada", String.format(
-                        "Meta ID %d modificada con éxito para el vendedor ID %d.\n"
-                                + "Nuevo objetivo: $%,.2f | Total vendido: $%,.2f\n"
-                                + "Porcentaje de cumplimiento: %.2f%%",
-                        targetGoalId, empIdVal, updated.getAttTargetValue(), updated.getAttAchievedValue(), updated.getAttCompliancePercentage()));
-            }
         }));
         // endregion
 
@@ -222,9 +203,14 @@ public class EmployeePanel {
                         state.setValue(emp.getAttState());
 
                         if (emp.getAttHireDate() != null) {
-                            hireDate.setValue(emp.getAttHireDate().toInstant()
-                                    .atZone(java.time.ZoneId.systemDefault())
-                                    .toLocalDate());
+                            java.util.Date d = emp.getAttHireDate();
+                            if (d instanceof java.sql.Date) {
+                                hireDate.setValue(((java.sql.Date) d).toLocalDate());
+                            } else {
+                                hireDate.setValue(d.toInstant()
+                                        .atZone(java.time.ZoneId.systemDefault())
+                                        .toLocalDate());
+                            }
                         } else {
                             hireDate.setValue(null);
                         }
@@ -254,9 +240,12 @@ public class EmployeePanel {
                         }
                         goalTarget.setText(String.valueOf(g.getAttTargetValue()));
                         if (g.getAttStartDate() != null) {
-                            goalStartDate.setValue(g.getAttStartDate().toInstant()
-                                    .atZone(java.time.ZoneId.systemDefault())
-                                    .toLocalDate());
+                            java.util.Date d = g.getAttStartDate();
+                            if (d instanceof java.sql.Date) {
+                                goalStartDate.setValue(((java.sql.Date) d).toLocalDate());
+                            } else {
+                                goalStartDate.setValue(d.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+                            }
                         }
                         if (g.getAttState() != null) {
                             goalState.setValue(g.getAttState().toLowerCase().trim());
@@ -278,7 +267,7 @@ public class EmployeePanel {
 
         VBox box = UiKit.panelVBox(
                 UiKit.title("Gestión de Empleados"),
-                UiKit.muted("TBL_EMPLOYEE: Rol manager/seller (un solo manager). Teléfono único."),
+                UiKit.muted("Rol manager/seller (un solo manager). Teléfono único."),
                 empFormSection,
                 UiKit.buttonRow(registerBtn, updateBtn),
                 table,

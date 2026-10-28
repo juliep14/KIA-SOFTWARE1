@@ -24,12 +24,6 @@ public class EmployeeRepository extends BaseRepository {
              WHERE EMP_ID = ?
             """;
 
-    private static final String SQL_DISABLE = """
-            UPDATE TBL_EMPLOYEE
-               SET EMP_STATE = 'inactive'
-             WHERE EMP_ID = ?
-            """;
-
     private static final String SQL_EXIST = "SELECT COUNT(*) FROM TBL_EMPLOYEE WHERE EMP_ID = ?";
 
     private static final String SQL_MANAGER_COUNT = """

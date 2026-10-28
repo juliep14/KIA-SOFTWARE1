@@ -21,19 +21,7 @@ public class SalesGoalRepository extends BaseRepository {
 
     private static final String SQL_UPDATE = """
             UPDATE TBL_SALESGOAL
-               SET SGL_TARGET_VALUE = ?, SGL_GOAL_TYPE = ?, SGL_END_DATE = ?
-             WHERE SGL_ID = ?
-            """;
-
-    private static final String SQL_DISABLE = """
-            UPDATE TBL_SALESGOAL
-               SET SGL_STATE = 'inactive'
-             WHERE SGL_ID = ?
-            """;
-
-    private static final String SQL_COMPLETE = """
-            UPDATE TBL_SALESGOAL
-               SET SGL_STATE = 'complete'
+               SET SGL_TARGET_VALUE = ?, SGL_START_DATE = ?, SGL_GOAL_TYPE = ?, SGL_END_DATE = ?, SGL_STATE = ?
              WHERE SGL_ID = ?
             """;
 
@@ -44,9 +32,7 @@ public class SalesGoalRepository extends BaseRepository {
               FROM TBL_SALESGOAL
              WHERE EMP_ID = ? AND LOWER(TRIM(SGL_STATE)) = 'active'
             """;
-
-    private static final String SQL_NEXT_ID = "SELECT NVL(MAX(SGL_ID), 500) + 1 FROM TBL_SALESGOAL";
-
+   
     private static final String SQL_BY_ID = """
             SELECT SGL_ID, EMP_ID, SGL_GOAL_TYPE, SGL_TARGET_VALUE, SGL_START_DATE, SGL_END_DATE, SGL_STATE
               FROM TBL_SALESGOAL
@@ -57,26 +43,6 @@ public class SalesGoalRepository extends BaseRepository {
             SELECT SGL_ID, EMP_ID, SGL_GOAL_TYPE, SGL_TARGET_VALUE, SGL_START_DATE, SGL_END_DATE, SGL_STATE
               FROM TBL_SALESGOAL
              ORDER BY SGL_ID
-            """;
-
-    private static final String SQL_BY_STATE = """
-            SELECT SGL_ID, EMP_ID, SGL_GOAL_TYPE, SGL_TARGET_VALUE, SGL_START_DATE, SGL_END_DATE, SGL_STATE
-              FROM TBL_SALESGOAL
-             WHERE LOWER(TRIM(SGL_STATE)) = LOWER(TRIM(?))
-             ORDER BY SGL_ID
-            """;
-
-    private static final String SQL_BY_EMPLOYEE = """
-            SELECT SGL_ID, EMP_ID, SGL_GOAL_TYPE, SGL_TARGET_VALUE, SGL_START_DATE, SGL_END_DATE, SGL_STATE
-              FROM TBL_SALESGOAL
-             WHERE EMP_ID = ?
-             ORDER BY SGL_ID
-            """;
-
-    private static final String SQL_ACTIVE_BY_EMPLOYEE = """
-            SELECT SGL_ID, EMP_ID, SGL_GOAL_TYPE, SGL_TARGET_VALUE, SGL_START_DATE, SGL_END_DATE, SGL_STATE
-              FROM TBL_SALESGOAL
-             WHERE EMP_ID = ? AND LOWER(TRIM(SGL_STATE)) = 'active'
             """;
 
     private static final String SQL_SALES_TOTAL_DATE_RANGE = """
@@ -126,11 +92,6 @@ public class SalesGoalRepository extends BaseRepository {
 
     public int opRegisterSalesGoal(clsSalesGoal prmSalesGoal) {
         try {
-            if (prmSalesGoal.getAttSalesGoalId() <= 0) {
-                Integer varNextId = attJdbcTemplate.queryForObject(SQL_NEXT_ID, Integer.class);
-                prmSalesGoal.setAttSalesGoalId(varNextId != null ? varNextId : 501);
-            }
-
             Integer varEmpId = prmSalesGoal.getAttEmployee() != null
                     ? prmSalesGoal.getAttEmployee().getAttEmployeeId()
                     : null;
@@ -154,25 +115,11 @@ public class SalesGoalRepository extends BaseRepository {
         try {
             attJdbcTemplate.update(SQL_UPDATE,
                     prmSalesGoal.getAttTargetValue(),
+                    prmSalesGoal.getAttStartDate(),
                     prmSalesGoal.getAttGoalType(),
                     prmSalesGoal.getAttEndDate(),
+                    prmSalesGoal.getAttState(),
                     prmSalesGoal.getAttSalesGoalId());
-        } catch (Exception e) {
-            throw opWrap(e);
-        }
-    }
-
-    public void opDisableSalesGoal(int prmId) {
-        try {
-            attJdbcTemplate.update(SQL_DISABLE, prmId);
-        } catch (Exception e) {
-            throw opWrap(e);
-        }
-    }
-
-    public void opCompleteSalesGoal(int prmId) {
-        try {
-            attJdbcTemplate.update(SQL_COMPLETE, prmId);
         } catch (Exception e) {
             throw opWrap(e);
         }
@@ -208,31 +155,6 @@ public class SalesGoalRepository extends BaseRepository {
     public List<clsSalesGoal> opGetAllSalesGoals() {
         try {
             return attJdbcTemplate.query(SQL_ALL, opSalesGoalRowMapper());
-        } catch (Exception e) {
-            throw opWrap(e);
-        }
-    }
-
-    public List<clsSalesGoal> opGetSalesGoalsByState(String prmState) {
-        try {
-            return attJdbcTemplate.query(SQL_BY_STATE, opSalesGoalRowMapper(), prmState);
-        } catch (Exception e) {
-            throw opWrap(e);
-        }
-    }
-
-    public List<clsSalesGoal> opGetSalesGoalsByEmployeeId(int prmEmpId) {
-        try {
-            return attJdbcTemplate.query(SQL_BY_EMPLOYEE, opSalesGoalRowMapper(), prmEmpId);
-        } catch (Exception e) {
-            throw opWrap(e);
-        }
-    }
-
-    public clsSalesGoal opGetActiveGoalByEmployeeId(int prmEmpId) {
-        try {
-            List<clsSalesGoal> varList = attJdbcTemplate.query(SQL_ACTIVE_BY_EMPLOYEE, opSalesGoalRowMapper(), prmEmpId);
-            return varList.isEmpty() ? null : varList.get(0);
         } catch (Exception e) {
             throw opWrap(e);
         }

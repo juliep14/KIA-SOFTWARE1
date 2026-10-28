@@ -379,32 +379,12 @@ public final class UiKit {
         }
     }
 
-    public static Integer parseIntOrNull(String value) {
-        String v = emptyToNull(value);
-        if (v == null) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(v);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Debe ser un número entero válido.");
-        }
-    }
-
     public static double parseDouble(String value, String fieldName) {
         try {
             return Double.parseDouble(value.trim());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Campo '" + fieldName + "' debe ser un número válido.");
         }
-    }
-
-    public static Double parseDoubleOrNull(String value) {
-        String v = emptyToNull(value);
-        if (v == null) {
-            return null;
-        }
-        return Double.parseDouble(v);
     }
 
     public static Date toSqlDate(DatePicker picker) {

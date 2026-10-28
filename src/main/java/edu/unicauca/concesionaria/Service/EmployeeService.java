@@ -29,8 +29,9 @@ public class EmployeeService {
         } catch (excDatabaseException e) {
             throw new excDatabaseException("Error al obtener el empleado desde BD: ", e);
         }
-        if (varEmployee == null)
+        if (varEmployee == null) {
             throw new excNotFoundException("Empleado no encontrado");
+        }
         return varEmployee;
     }
 
@@ -45,8 +46,9 @@ public class EmployeeService {
 
         clsValidations.opValidateId(prmId);
 
-        if (attEmployeeRepository.opEmployeeExist(prmId))
+        if (attEmployeeRepository.opEmployeeExist(prmId)) {
             throw new excDuplicateDataException("Empleado ya registrado");
+        }
 
         clsValidations.opValidateName(prmName, 3, 50);
         clsValidations.opValidatePhone(prmPhone);
@@ -56,8 +58,9 @@ public class EmployeeService {
         clsValidations.opValidateState(prmState);
 
         String varRole = prmRole.toLowerCase().trim();
-        if (varRole.equals("manager") && attEmployeeRepository.opManagerExists())
+        if (varRole.equals("manager") && attEmployeeRepository.opManagerExists()) {
             throw new excValidationException("Error: Solo se permite un gerente general");
+        }
 
         clsEmployee varTemp = new clsEmployee();
         varTemp.setAttEmployeeId(prmId);
@@ -79,28 +82,24 @@ public class EmployeeService {
     public void opUpdateEmployee(int prmId, String prmName, String prmPhone, Double prmSalary, String prmState) {
         clsValidations.opValidateId(prmId);
 
-        if (!attEmployeeRepository.opEmployeeExist(prmId))
+        if (!attEmployeeRepository.opEmployeeExist(prmId)) {
             throw new excNotFoundException("Empleado no encontrado");
+        }
 
-        if (prmName != null)
-            clsValidations.opValidateName(prmName, 3, 50);
-        if (prmPhone != null)
-            clsValidations.opValidatePhone(prmPhone);
-        if (prmSalary != null)
-            clsValidations.opValidateSalary(prmSalary);
-        if (prmState != null)
-            clsValidations.opValidateState(prmState);
+        if (prmName != null) 
+            clsValidations.opValidateName(prmName, 3, 50);      
+        if (prmPhone != null) 
+            clsValidations.opValidatePhone(prmPhone);       
+        if (prmSalary != null) 
+            clsValidations.opValidateSalary(prmSalary);        
+        if (prmState != null) 
+            clsValidations.opValidateState(prmState);       
 
         clsEmployee varEmployee = opFetchFromDB(prmId);
-
-        if (prmName != null)
-            varEmployee.setAttName(prmName.trim());
-        if (prmPhone != null)
-            varEmployee.setAttPhone(prmPhone);
-        if (prmSalary != null)
-            varEmployee.setAttSalary(prmSalary);
-        if (prmState != null)
-            varEmployee.setAttState(prmState);
+        varEmployee.setAttName(prmName.trim());
+        varEmployee.setAttPhone(prmPhone);
+        varEmployee.setAttSalary(prmSalary);
+        varEmployee.setAttState(prmState);
 
         try {
             attEmployeeRepository.opUpdateEmployee(varEmployee);
@@ -123,8 +122,9 @@ public class EmployeeService {
         clsValidations.opValidateId(prmId);
 
         clsEmployee varEmployee = attEmployees.get(prmId);
-        if (varEmployee != null)
+        if (varEmployee != null) {
             return varEmployee;
+        }
 
         varEmployee = opFetchFromDB(prmId);
         attEmployees.put(prmId, varEmployee);

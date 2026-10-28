@@ -4,6 +4,7 @@ import edu.unicauca.concesionaria.Controller.clsController;
 import edu.unicauca.concesionaria.Model.clsCustomer;
 import edu.unicauca.concesionaria.ui.util.TableHelper;
 import edu.unicauca.concesionaria.ui.util.UiKit;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TitledPane;
@@ -14,16 +15,12 @@ public class CustomerPanel {
 
     private final clsController controller;
     private final TableView<clsCustomer> table = TableHelper.create();
-    private final UiKit.FeedbackBanner banner = new UiKit.FeedbackBanner();
-
-    // Almacena el documento original del cliente que se está editando actualmente
-    private Integer editingOriginalDocument = null;
 
     public CustomerPanel(clsController controller) {
         this.controller = controller;
 
         table.getColumns().addAll(
-                TableHelper.col("Documento", c -> String.valueOf(c.getAttCustomerId())),
+                TableHelper.col("ID Cliente", c -> String.valueOf(c.getAttCustomerId())),
                 TableHelper.col("Nombre", clsCustomer::getAttName),
                 TableHelper.col("Teléfono", clsCustomer::getAttPhone),
                 TableHelper.col("Email", c -> c.getAttEmail() != null ? c.getAttEmail() : ""),
@@ -33,72 +30,60 @@ public class CustomerPanel {
     }
 
     public VBox getContent() {
-        var docField = UiKit.field("Número de documento (obligatorio)");
-        var nameField = UiKit.field("Nombre completo (máx. 50 caracteres)");
-        var phoneField = UiKit.field("Teléfono de contacto (10 dígitos)");
-        var emailField = UiKit.field("Correo electrónico (opcional)");
+        var id = UiKit.field("ID Cliente");
+        var name = UiKit.field("Nombre (máx. 50)");
+        var phone = UiKit.field("Teléfono (10 dígitos, único)");
+        var email = UiKit.field("Correo electrónico (opcional)");
+        ComboBox<String> state = new ComboBox<>();
+        state.getItems().addAll("active", "inactive");
+        state.setValue("active");
 
         Runnable clearForm = () -> {
-            docField.clear();
-            nameField.clear();
-            phoneField.clear();
-            emailField.clear();
-            editingOriginalDocument = null;
+            id.clear();
+            name.clear();
+            phone.clear();
+            email.clear();
+            state.setValue("active");
         };
 
+        // Botón: Limpiar
         var clearBtn = UiKit.secondaryButton("Limpiar");
-        clearBtn.setOnAction(e -> {
-            clearForm.run();
-            banner.clear();
-        });
+        clearBtn.setOnAction(e -> clearForm.run());
 
         GridPane form = UiKit.formGrid(2);
-        UiKit.addFormRow(form, 0, "Documento", docField);
-        UiKit.addFormRow(form, 1, "Nombre", nameField);
-        UiKit.addFormRow(form, 2, "Teléfono", phoneField);
-        UiKit.addFormRow(form, 3, "Email", emailField);
+        UiKit.addFormRow(form, 0, "ID Cliente", id);
+        UiKit.addFormRow(form, 1, "Nombre", name);
+        UiKit.addFormRow(form, 2, "Teléfono", phone);
+        UiKit.addFormRow(form, 3, "Email", email);
+        UiKit.addFormRow(form, 4, "Estado", state);
 
         GridPane.setColumnSpan(clearBtn, 2);
-        form.add(clearBtn, 0, 4);
+        form.add(clearBtn, 0, 5);
 
-        // KIA-HU-08: Registro de cliente
+        // Botón: Registrar Cliente
         var registerBtn = UiKit.primaryButton("Registrar Cliente");
         registerBtn.setOnAction(e -> UiKit.run(() -> {
-            Integer docVal = UiKit.parseIntOrNull(docField.getText());
-            String nameVal = UiKit.emptyToNull(nameField.getText());
-            String phoneVal = UiKit.emptyToNull(phoneField.getText());
-            String emailVal = UiKit.emptyToNull(emailField.getText());
-
-            // Validación de obligatorios y formato en CustomerService
-            controller.opRegisterCustomer(docVal, nameVal, phoneVal, emailVal, "active");
-
-            refreshTable();
-            banner.showSuccess("Cliente registrado exitosamente y habilitado para procesos de venta.");
+            controller.opRegisterCustomer(
+                    UiKit.parseInt(id.getText(), "ID Cliente"),
+                    UiKit.emptyToNull(name.getText()),
+                    UiKit.emptyToNull(phone.getText()),
+                    UiKit.emptyToNull(email.getText()), 
+                    "active");            
             clearForm.run();
+            refreshTable();
         }));
 
-        // KIA-HU-09: Modificación de información de clientes
+        // Botón: Actualizar Cliente
         var updateBtn = UiKit.primaryButton("Actualizar Cliente");
         updateBtn.setOnAction(e -> UiKit.run(() -> {
-            Integer newDocVal = UiKit.parseIntOrNull(docField.getText());
-            if (newDocVal == null) {
-                throw new IllegalArgumentException("El número de documento es obligatorio para actualizar el cliente.");
-            }
-
-            // Si el cliente fue cargado previamente para edición se usa editingOriginalDocument;
-            // de lo contrario se asume el documento indicado en el campo.
-            int currentDoc = (editingOriginalDocument != null) ? editingOriginalDocument : newDocVal;
-
             controller.opUpdateCustomer(
-                    currentDoc,
-                    newDocVal,
-                    UiKit.emptyToNull(nameField.getText()),
-                    UiKit.emptyToNull(phoneField.getText()),
-                    UiKit.emptyToNull(emailField.getText()));
-
-            refreshTable();
-            banner.showSuccess(String.format("Información del cliente actualizada exitosamente (Documento: %d).", newDocVal));
-            clearForm.run();
+                    UiKit.parseInt(id.getText(), "ID Cliente"),
+                    UiKit.emptyToNull(name.getText()),
+                    UiKit.emptyToNull(phone.getText()),
+                    UiKit.emptyToNull(email.getText()),
+                    state.getValue());                      
+            clearForm.run();           
+            refreshTable(); 
         }));
 
         // Listener en la tabla de clientes: Carga los datos en el formulario para edición inmediata
@@ -108,12 +93,11 @@ public class CustomerPanel {
                 if (!row.isEmpty()) {
                     clsCustomer customer = row.getItem();
                     if (customer != null) {
-                        docField.setText(String.valueOf(customer.getAttCustomerId()));
-                        nameField.setText(customer.getAttName() != null ? customer.getAttName() : "");
-                        phoneField.setText(customer.getAttPhone() != null ? customer.getAttPhone() : "");
-                        emailField.setText(customer.getAttEmail() != null ? customer.getAttEmail() : "");
-
-                        editingOriginalDocument = customer.getAttCustomerId();
+                        id.setText(String.valueOf(customer.getAttCustomerId()));
+                        name.setText(customer.getAttName() != null ? customer.getAttName() : "");
+                        phone.setText(customer.getAttPhone() != null ? customer.getAttPhone() : "");
+                        email.setText(customer.getAttEmail() != null ? customer.getAttEmail() : "");
+                        state.setValue(customer.getAttState());
                     }
                 }
             });
@@ -125,8 +109,7 @@ public class CustomerPanel {
 
         VBox box = UiKit.panelVBox(
                 UiKit.title("Gestión de Clientes"),
-                UiKit.muted("Registro de clientes habilitados para venta (KIA-HU-08) y actualización de datos (KIA-HU-09)."),
-                banner,
+                UiKit.muted("Registro de clientes habilitados para venta y actualización de datos."),                
                 formSection,
                 UiKit.buttonRow(registerBtn, updateBtn),
                 table);

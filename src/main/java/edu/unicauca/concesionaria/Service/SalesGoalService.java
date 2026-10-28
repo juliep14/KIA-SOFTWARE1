@@ -79,16 +79,20 @@ public class SalesGoalService {
         LocalDate varStart = prmStartDate.toLocalDate();
         String varType = prmGoalType.toLowerCase().trim();
         LocalDate varEnd = switch (varType) {
-            case "monthly" -> varStart.plusDays(30);
-            case "quarterly" -> varStart.plusDays(90);
-            case "yearly" -> varStart.plusDays(365);
-            default -> varStart.plusDays(30);
+            case "monthly" ->
+                varStart.plusDays(30);
+            case "quarterly" ->
+                varStart.plusDays(90);
+            case "yearly" ->
+                varStart.plusDays(365);
+            default ->
+                varStart.plusDays(30);
         };
         return Date.valueOf(varEnd);
     }
 
-    public int opRegisterSalesGoal(Integer prmSalesGoalId, int prmEmployeeId,
-                                   String prmGoalType, double prmTargetValue, Date prmStartDate, String prmGoalState) {
+    public void opRegisterSalesGoal(Integer prmSalesGoalId, int prmEmployeeId,
+            String prmGoalType, double prmTargetValue, Date prmStartDate, String prmGoalState) {
 
         if (prmSalesGoalId != null && prmSalesGoalId > 0) {
             clsValidations.opValidateId(prmSalesGoalId);
@@ -129,18 +133,16 @@ public class SalesGoalService {
         varTemp.setAttEndDate(varEndDate);
         varTemp.setAttState(prmGoalState);
 
-        int varId;
         try {
-            varId = attSalesGoalRepository.opRegisterSalesGoal(varTemp);
+            attSalesGoalRepository.opRegisterSalesGoal(varTemp);
         } catch (excDatabaseException e) {
             throw new excDatabaseException("Error al registrar la meta de venta: ", e);
         }
 
-        opRefreshCache(varId);
-        return varId;
+        opRefreshCache(prmSalesGoalId);
     }
 
-    public void opUpdateSalesGoal(int prmId, Double prmTargetValue, String prmGoalType) {
+    public void opUpdateSalesGoal(int prmId, Double prmTargetValue, String prmGoalType, Date prmStartDate, String prmGoalState) {
         clsValidations.opValidateId(prmId);
 
         if (!attSalesGoalRepository.opSalesGoalExist(prmId)) {
@@ -151,22 +153,31 @@ public class SalesGoalService {
 
         if ("complete".equalsIgnoreCase(varGoal.getAttState())) {
             throw new excValidationException("No se puede modificar una meta ya completada");
-        }
+        }        
 
+        clsValidations.opValidateGoalType(prmGoalType);
+        clsValidations.opValidateTargetValue(prmTargetValue);
+        clsValidations.opValidateSalesGoalState(prmGoalState);
+        
         if (prmTargetValue != null) {
-            clsValidations.opValidateTargetValue(prmTargetValue);
             varGoal.setAttTargetValue(prmTargetValue);
+        }       
+        if (prmStartDate != null) {
+            clsValidations.opValidateDate(prmStartDate);
+            varGoal.setAttStartDate(prmStartDate);
         }
-
         if (prmGoalType != null && !prmGoalType.isBlank()) {
-            clsValidations.opValidateGoalType(prmGoalType);
             varGoal.setAttGoalType(prmGoalType.toLowerCase().trim());
+        }
+        if (varGoal.getAttStartDate() != null && varGoal.getAttGoalType() != null) {
             Date varStartDate = varGoal.getAttStartDate() instanceof Date d
                     ? d
                     : new Date(varGoal.getAttStartDate().getTime());
+
             varGoal.setAttEndDate(opCalculateEndDate(varStartDate, varGoal.getAttGoalType()));
         }
-
+        
+        varGoal.setAttState(prmGoalState);       
         try {
             attSalesGoalRepository.opUpdateSalesGoal(varGoal);
         } catch (excDatabaseException e) {
@@ -174,63 +185,6 @@ public class SalesGoalService {
         }
 
         opRefreshCache(prmId);
-    }
-
-    public void opDisableSalesGoal(int prmId) {
-        clsValidations.opValidateId(prmId);
-
-        if (!attSalesGoalRepository.opSalesGoalExist(prmId)) {
-            throw new excNotFoundException("Meta de venta no encontrada");
-        }
-
-        clsSalesGoal varGoal = opFetchFromDB(prmId);
-
-        if ("complete".equalsIgnoreCase(varGoal.getAttState())) {
-            throw new excValidationException("La meta ya fue completada, no se puede inactivar");
-        }
-
-        try {
-            attSalesGoalRepository.opDisableSalesGoal(prmId);
-        } catch (excDatabaseException e) {
-            throw new excDatabaseException("Error al inactivar la meta de venta: ", e);
-        }
-
-        opRefreshCache(prmId);
-    }
-
-    public void opCompleteSalesGoal(int prmId) {
-        clsValidations.opValidateId(prmId);
-
-        if (!attSalesGoalRepository.opSalesGoalExist(prmId)) {
-            throw new excNotFoundException("Meta de venta no encontrada");
-        }
-
-        clsSalesGoal varGoal = opFetchFromDB(prmId);
-
-        if ("inactive".equalsIgnoreCase(varGoal.getAttState()) || "complete".equalsIgnoreCase(varGoal.getAttState())) {
-            throw new excValidationException("Meta ya terminada o inactivada");
-        }
-
-        try {
-            attSalesGoalRepository.opCompleteSalesGoal(prmId);
-        } catch (excDatabaseException e) {
-            throw new excDatabaseException("Error al completar la meta de venta: ", e);
-        }
-
-        opRefreshCache(prmId);
-    }
-
-    public clsSalesGoal opGetSalesGoalById(int prmId) {
-        clsValidations.opValidateId(prmId);
-
-        clsSalesGoal varGoal = attSalesGoals.get(prmId);
-        if (varGoal != null) {
-            return varGoal;
-        }
-
-        varGoal = opFetchFromDB(prmId);
-        attSalesGoals.put(prmId, varGoal);
-        return varGoal;
     }
 
     public List<clsSalesGoal> opGetAllSalesGoals() {
@@ -248,63 +202,6 @@ public class SalesGoalService {
             return varList;
         } catch (excDatabaseException e) {
             throw new excDatabaseException("Error al obtener las metas de venta: ", e);
-        }
-    }
-
-    public List<clsSalesGoal> opGetSalesGoalsByState(String prmState) {
-        clsValidations.opValidateSalesGoalState(prmState);
-        try {
-            List<clsSalesGoal> varList = attSalesGoalRepository.opGetSalesGoalsByState(prmState);
-            for (clsSalesGoal varGoal : varList) {
-                if (varGoal.getAttEmployee() != null) {
-                    try {
-                        varGoal.setAttEmployee(attEmployeeService.opGetEmployeeById(varGoal.getAttEmployee().getAttEmployeeId()));
-                    } catch (Exception ignored) {
-                    }
-                }
-                opPopulateCompliance(varGoal);
-            }
-            return varList;
-        } catch (excDatabaseException e) {
-            throw new excDatabaseException("Error al obtener las metas de venta por estado: ", e);
-        }
-    }
-
-    public List<clsSalesGoal> opGetSalesGoalsByEmployeeId(int prmEmpId) {
-        clsValidations.opValidateId(prmEmpId);
-        try {
-            List<clsSalesGoal> varList = attSalesGoalRepository.opGetSalesGoalsByEmployeeId(prmEmpId);
-            for (clsSalesGoal varGoal : varList) {
-                if (varGoal.getAttEmployee() != null) {
-                    try {
-                        varGoal.setAttEmployee(attEmployeeService.opGetEmployeeById(varGoal.getAttEmployee().getAttEmployeeId()));
-                    } catch (Exception ignored) {
-                    }
-                }
-                opPopulateCompliance(varGoal);
-            }
-            return varList;
-        } catch (excDatabaseException e) {
-            throw new excDatabaseException("Error al obtener las metas del empleado: ", e);
-        }
-    }
-
-    public clsSalesGoal opGetActiveGoalByEmployeeId(int prmEmpId) {
-        clsValidations.opValidateId(prmEmpId);
-        try {
-            clsSalesGoal varGoal = attSalesGoalRepository.opGetActiveGoalByEmployeeId(prmEmpId);
-            if (varGoal != null) {
-                if (varGoal.getAttEmployee() != null) {
-                    try {
-                        varGoal.setAttEmployee(attEmployeeService.opGetEmployeeById(prmEmpId));
-                    } catch (Exception ignored) {
-                    }
-                }
-                opPopulateCompliance(varGoal);
-            }
-            return varGoal;
-        } catch (excDatabaseException e) {
-            throw new excDatabaseException("Error al obtener la meta activa del empleado: ", e);
         }
     }
 
